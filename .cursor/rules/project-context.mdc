@@ -1,0 +1,45 @@
+---
+description: Project context and conventions for zip-mcp (ZIP MCP Server)
+alwaysApply: true
+---
+
+# zip-mcp Project
+
+This repo is **ZIP MCP Server**: an MCP (Model Context Protocol) server for ZIP compression/decompression, built with fastMCP and zip.js.
+
+## Tech stack
+
+- **Runtime**: Node.js (>=20)
+- **Language**: TypeScript (ESM, `"type": "module"`)
+- **MCP framework**: fastmcp
+- **ZIP**: @zip.js/zip.js
+- **Validation**: zod
+
+## Structure
+
+- `src/index.ts` — Entry point; defines MCP tools (compress, decompress, get_zip_info, echo).
+- `src/utils/compression.ts` — Core compress/decompress and zip metadata helpers.
+- `src/types/fastmcp.d.ts` — Local type declarations for fastmcp.
+- `scripts/add-shebang.js` — Build script (shebang + chmod for `dist/index.js`).
+
+## Commands
+
+- **Develop**: `yarn start` (runs `npx tsx src/index.ts`).
+- **Build**: `yarn build` → compiles to `dist/`, adds shebang, chmod +x on `dist/index.js`.
+- **Install**: `yarn install`. If lockfile is immutable, use `CI=false yarn install`.
+
+## Conventions
+
+- Use existing `formatError` and path helpers (`exists`, `getAllFiles`) for consistency.
+- Tool parameters are validated with zod; keep schemas in sync with README tool descriptions.
+- No network or subprocess usage; only local fs and in-memory zip operations.
+
+## MCP usage
+
+The server runs over stdio. Clients (e.g. Cursor, Claude Desktop) configure it in their MCP config, typically:
+
+```json
+"zip-mcp": { "command": "zip-mcp", "args": [] }
+```
+
+For local development they can use `yarn start` or `npx tsx src/index.ts` as the command.
