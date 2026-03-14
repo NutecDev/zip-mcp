@@ -10,6 +10,35 @@ import {
 import * as fs from "fs/promises";
 import * as path from "path";
 
+// MCP over stdio: only JSON-RPC must go to stdout. Redirect any other stdout to stderr
+// so Cursor's client doesn't get "Unexpected token ... is not valid JSON".
+const rawStdoutWrite = process.stdout.write.bind(process.stdout);
+process.stdout.write = function (
+  chunk: string | Uint8Array,
+  encodingOrCb?: BufferEncoding | ((err?: Error | null) => void),
+  cb?: (err?: Error | null) => void
+): boolean {
+  const buf = typeof chunk === "string" ? chunk : chunk.toString();
+  const isJsonRpc =
+    buf.trimStart().startsWith("{") && buf.includes('"jsonrpc"');
+  if (isJsonRpc) {
+    return (rawStdoutWrite as typeof process.stdout.write)(
+      chunk,
+      encodingOrCb as BufferEncoding,
+      cb
+    );
+  }
+  const done =
+    typeof encodingOrCb === "function" ? encodingOrCb : typeof cb === "function" ? cb : undefined;
+  const ok = process.stderr.write(
+    chunk,
+    typeof encodingOrCb === "function" ? undefined : (encodingOrCb as BufferEncoding),
+    done
+  );
+  if (!ok && done) process.nextTick(() => (done as (err?: Error | null) => void)());
+  return ok;
+};
+
 // Create FastMCP server instance
 const server = new FastMCP({
   name: "ZIP MCP Server",
@@ -230,7 +259,7 @@ server.addTool({
 
         // Check if file already exists
         if ((await exists(outputFilePath)) && !overwrite) {
-          console.warn(`Skipping existing file: ${outputFilePath}`);
+          console.error(`Skipping existing file: ${outputFilePath}`);
           continue;
         }
 
@@ -364,4 +393,5 @@ server.start({
   transportType: "stdio",
 });
 
-console.log("ZIP MCP Server started");
+// Log to stderr so stdout stays pure JSON-RPC for MCP
+console.error("ZIP MCP Server started");

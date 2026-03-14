@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "zip-mcp": {
+      "command": "yarn",
+      "args": ["start"],
+      "cwd": "/Users/stevenburg/Projects/NeoWare/zip-mcp"
+    }
+  }
+}

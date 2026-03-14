@@ -10,7 +10,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "start": "npx tsx src/index.ts",
+    "start": "yarn exec tsx src/index.ts",
     "build": "tsc && node scripts/add-shebang.js && chmod +x dist/index.js",
     "prepare": "npm run build"
   },
